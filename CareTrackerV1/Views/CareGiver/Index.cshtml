@@ -1,0 +1,121 @@
+﻿@model CareTrackerV1.ViewModel.CareGiverIndexData
+
+@{
+    ViewBag.Title = "CareGivers";
+}
+
+<h2>Care Givers</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+<table class="table">
+    <tr>
+        <th>FirstName</th>
+        <th>Surnam</th>
+        <th>PhoneNumber</th>
+        <th>Mobile</th>
+        <th></th>
+    </tr>
+
+@foreach (var item in Model.CareGivers)
+{
+    string selectedRow = "";
+    if (item.ID == ViewBag.CareGiverID)
+    {
+        selectedRow = "success";
+    }
+    <tr class="@selectedRow">
+        <td>
+            @Html.DisplayFor(modelItem => item.FirstName)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Surname)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.PhoneNumber)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Mobile)
+        </td>
+        
+        <td>
+            @Html.ActionLink("Select", "Index", new { id = item.ID }) |
+            @Html.ActionLink("Edit", "Edit", new { id=item.ID }) |
+            @Html.ActionLink("Details", "Details", new { id=item.ID }) |
+            @Html.ActionLink("Delete", "Delete", new { id=item.ID })
+        </td>
+    </tr>
+}
+
+</table>
+
+@if (Model.Clients != null)
+{
+    <h3>Client List</h3>
+    <table class="table">
+        <tr>
+            <th></th>
+            <th>First Name</th>
+            <th>Surname</th>
+            <th>DOB</th>
+        </tr>
+
+        @foreach (var item in Model.Clients)
+        {
+            string selectedRow = "";
+            if (item.ID == ViewBag.ClientID)
+            {
+                selectedRow = "success";
+            }
+
+            <tr class="@selectedRow">
+                <td>
+                   @Html.ActionLink("Select", "Index", new { clientID = item.ID })
+                </td>
+                <td>
+                    @item.FirstName
+                </td>
+                <td>
+                    @item.Surname
+                </td>
+                <td>
+                    @item.DOB
+                </td>
+            </tr>
+        }
+    </table>
+}
+
+    @if (Model.Visits != null)
+    {
+        <h3>Visit List</h3>
+        <table class="table">
+            <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Details</th>
+            </tr>
+
+            @foreach (var item in Model.Visits)
+            {
+                string selectedRow = "";
+                if ((item.CareGiverID == ViewBag.CareGiverID)&&(item.ClientID==ViewBag.ClientID))
+                {
+                    selectedRow = "success";
+                }
+
+                <tr class="@selectedRow">
+                    <td>
+                        @item.Date
+                    </td>
+                    <td>
+                        @item.Time
+                    </td>
+                    <td>
+                        @item.Details
+                    </td>
+                </tr>
+            }
+        </table>
+    }
