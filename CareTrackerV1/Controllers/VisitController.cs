@@ -18,7 +18,7 @@ namespace CareTrackerV1.Controllers
         // GET: Visit
         public ActionResult Index()
         {
-            //var visits = db.Visits.Include(v => v.CareGiver);  NOT SURE OF PURPOSE FOR THIS LINE OF CODE
+            var visits = db.Visits.Include(c => c.CareGiver).Include(cl => cl.Client); // Including CareGiver and Client allows eager loading of names etc
             //return View(visits.ToList());
             return View(db.Visits.ToList());
         }
@@ -42,16 +42,16 @@ namespace CareTrackerV1.Controllers
         public ActionResult Create()
         {
             ViewBag.CareGiverID = new SelectList(db.CareGivers, "ID", "FirstName");
-            Visit visits = new Visit();
-            PopulateCreateViewTaskData(visits);
-            return View(visits);
-            
+            Visit visit = new Visit();
+            ShowViewTaskData(visit);       //Gives checkbox options
+            return View(visit);
+
         }
 
-        private void PopulateCreateViewTaskData(Visit visit)                //Modified PopulateViewTaskData to remove 'pre-existing' tasks
+        private void ShowViewTaskData(Visit visit)                //Modified PopulateViewTaskData to remove 'pre-existing' tasks
         {
             var allVisitTasks = db.VisitTasks;
-            //var visitTasks = new HashSet<int>(visit.VisitTasks.Select(t => t.ID));
+            var visitTasks = new HashSet<int>();
             var viewModel = new List<VisitTaskData>();
             foreach (var task in allVisitTasks)
             {
@@ -59,7 +59,7 @@ namespace CareTrackerV1.Controllers
                 {
                     VisitID = task.ID,
                     Description = task.Description,
-                    //Selected = visitTasks.Contains(task.ID)
+                    Selected = visitTasks.Contains(task.ID)
                 });
             }
             ViewBag.VisitTasks = viewModel;
@@ -73,16 +73,17 @@ namespace CareTrackerV1.Controllers
 
         public ActionResult Create(FormCollection formCollection, string[] selectedTasks)
         {
-            Visit visitToCreate = new Visit();
-                
+
+            var visitToCreate = new Visit();
+
             if (TryUpdateModel(visitToCreate, "",
       new string[] { "Time", "Date", "CareGiverID", "ClientID", "Details", "AlertType", "AlertDetails" }))
             {
                 try
                 {
-                    UpdateVisitTasks(selectedTasks, visitToCreate);
+                    CreateVisitTasks(selectedTasks, visitToCreate);
 
-                    db.Entry(visitToCreate).State = EntityState.Modified;
+                    db.Entry(visitToCreate).State = EntityState.Added;
                     db.SaveChanges();
 
                     return RedirectToAction("Index");
@@ -90,68 +91,46 @@ namespace CareTrackerV1.Controllers
                 catch (DataException /* dex */)
                 {
                     //Log the error (uncomment dex variable name after DataException and add a line here to write a log.
-                    ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists see your system administrator.");
+                    ModelState.AddModelError("", "Code not working");
                 }
             }
-            PopulateViewTaskData(visitToCreate);
+            ShowViewTaskData(visitToCreate);
             return View(visitToCreate);
         }
 
-        /*private void UpdateVisitTasks(string[] selectedTasks, Visit visitToUpdate)
+        private void CreateVisitTasks(string[] selectedTasks, Visit visitToCreate)
         {
             if (selectedTasks == null)
             {
-                visitToUpdate.VisitTasks = new List<VisitTask>();
+                visitToCreate.VisitTasks = new List<VisitTask>();
                 return;
             }
 
             var selectedTasksHS = new HashSet<string>(selectedTasks);
-            var visitVisitTasks = new HashSet<int>(visitToUpdate.VisitTasks.Select(t => t.ID));
+            var visitVisitTasks = new HashSet<int>(visitToCreate.VisitTasks.Select(t => t.ID));
             foreach (var visitTask in db.VisitTasks)
             {
                 if (selectedTasksHS.Contains(visitTask.ID.ToString()))
                 {
                     if (!visitVisitTasks.Contains(visitTask.ID))
                     {
-                        visitToUpdate.VisitTasks.Add(visitTask);
+                        visitToCreate.VisitTasks.Add(visitTask);
                     }
                 }
                 else
                 {
                     if (visitVisitTasks.Contains(visitTask.ID))
                     {
-                        visitToUpdate.VisitTasks.Remove(visitTask);
+                        visitToCreate.VisitTasks.Remove(visitTask);
                     }
                 }
             }
-        }*/
-        /*public ActionResult Create([Bind(Include = "ID,Time,Date,CareGiverID,ClientID,Details,AlertType,AlertDetails,i=>i.VisitTasks")] Visit visit)
-        {
-            if (ModelState.IsValid)
-            {
-                db.Visits.Add(visit);
-                db.SaveChanges();
-                return RedirectToAction("Index");
-            }
-
-            ViewBag.CareGiverID = new SelectList(db.CareGivers, "ID", "FirstName", visit.CareGiverID);
-            return View(visit);
-        }*/
+        }
 
         // GET: Visit/Edit/5
         public ActionResult Edit(int? id)
         {
-            /*if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            Visit visit = db.Visits.Find(id);
-            if (visit == null)
-            {
-                return HttpNotFound();
-            }
-            ViewBag.CareGiverID = new SelectList(db.CareGivers, "ID", "FirstName", visit.CareGiverID);
-            return View(visit);*/
+            
             Visit visit = db.Visits
                 .Include(i => i.CareGiver)
                 .Include(i => i.VisitTasks)
@@ -185,13 +164,7 @@ namespace CareTrackerV1.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Edit(int id, FormCollection formCollection, string[] selectedTasks)
         {
-            /*if (ModelState.IsValid)
-            {
-                db.Entry(visit).State = EntityState.Modified;
-                db.SaveChanges();
-                return RedirectToAction("Index");
-            }
-            return View(visit);*/
+            
             var visitToUpdate = db.Visits
                 .Include(i => i.CareGiver)
                 .Include(i => i.VisitTasks)

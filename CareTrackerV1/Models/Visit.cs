@@ -9,6 +9,12 @@ namespace CareTrackerV1.Models
 {
     public class Visit
     {
+
+        public Visit()
+        {
+            this.VisitTasks = new HashSet<VisitTask>();
+        }
+
         public int ID { get; set; }
 
         [Required]
