@@ -37,17 +37,17 @@ else
         <h3>
             @Html.ActionLink("Manage Role", "Index", "Role")
         </h3>
-        }
-        else
-        {
-        <h2>  Welcome <strong>@ViewBag.Name</strong> :) You have access to Client data only </h2>
+}
+else if (ViewBag.displaymenu == "Care Giver")
+{
+    <h2>  Welcome <strong>@ViewBag.Name @ViewBag.UserID</strong> :) You have access to your Client data only </h2>
 
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
-                <li>@Html.ActionLink("Client", "NonAdminIndex", "Client",new { area="" }, null)</li>  <!--need to pass UserID/CareGiverID fro here to Client Controller-->
-                <!--><li>@Html.ActionLink("Client", "NonAdminIndex", "Client", new { area = "" }, null)</li>-->
-                <!--<li>@Html.ActionLink("Visit", "Index", "Visit", new { area = "" }, null)</li>-->
+                <!--<li>@Html.ActionLink("Client", "CareGiverIndex", "Client", new { area="" }, null)</li>  need to pass UserID/CareGiverID fro here to Client Controller-->
+                <li>@Html.ActionLink("Client", "CareGiverIndex", "Client", new { UserID = ViewBag.UserID, careGiverID = ViewBag.CareGiverID }, null)</li>
             </ul>
         </div>
 }
+
 

@@ -23,6 +23,11 @@ namespace CareTrackerV1.Controllers
             return View(db.Visits.ToList());
         }
 
+        public ActionResult CareGiverClientVisitIndex(int? id)
+        {
+            return View(db.Visits.ToList().Where(i => i.ClientID == id));
+        }
+
         // GET: Visit/Details/5
         public ActionResult Details(int? id)
         {

@@ -30,6 +30,25 @@ namespace CareTrackerV1.Controllers
 
         // GET: Client for CareGiver
         //[Authorize(Roles = "Admin, CareGiver, NextOfKin")]
+        public ActionResult CareGiverIndex(string userID)
+        {
+
+            var viewModel = new ClientVisitUserData();
+
+            viewModel.Clients = db.Clients.
+                        Include(i => i.Visits).
+                        Include(i => i.CareGivers);
+
+            var UserID = userID;
+            viewModel.Clients = db.CareGivers.
+                                Where(i => i.UserID == userID).
+                                Single().Clients;
+
+            return View(viewModel);
+        }
+
+        // GET: Client for CareGiver
+        //[Authorize(Roles = "Admin, CareGiver, NextOfKin")]
         public ActionResult NonAdminIndex(int? id)
         {
             var viewModel = new ClientVisitUserData();

@@ -13,6 +13,8 @@ namespace CareTrackerV1.Controllers
     [Authorize]
     public class UsersController : Controller
     {
+        private ApplicationDbContext db = new ApplicationDbContext();
+
         // GET: Users
         public Boolean isAdminUser()
         {
@@ -48,6 +50,13 @@ namespace CareTrackerV1.Controllers
                 if (isAdminUser())
                 {
                     ViewBag.displayMenu = "Yes";
+                }
+                else if (User.IsInRole("Care Giver"))
+                {
+                    ViewBag.displayMenu = "Care Giver";
+                    ViewBag.UserID = User.Identity.GetUserId();
+                    var UserId = User.Identity.GetUserId();  //UserID loaded into CareGiver entity when new CareGiver is registered
+                    ViewBag.CareGiverID = db.CareGivers.Where(i => i.UserID == UserId);
                 }
                 return View();
             }
