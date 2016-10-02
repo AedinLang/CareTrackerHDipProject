@@ -48,6 +48,7 @@ namespace CareTrackerV1.Models
         public DbSet<Doctor> Doctors { get; set; }
         public DbSet<Visit> Visits { get; set; }
         public DbSet<VisitTask> VisitTasks { get; set; }
+        public DbSet<File> Files { get; set; }
 
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)

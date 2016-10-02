@@ -98,6 +98,15 @@
             @Html.DisplayFor(model => model.References)
         </dd>
 
+        @if (Model.Files.Any(f => f.FileType == CareTrackerV1.Models.FileType.PhotoID))
+        {
+            <dt>
+                PhotoID
+            </dt>
+            <dd>
+                <img src="~/File?id=@Model.Files.First(f => f.FileType == CareTrackerV1.Models.FileType.PhotoID).FileId" alt="photoID" />
+            </dd>
+        }
     </dl>
 </div>
 <p>

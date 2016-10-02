@@ -5,6 +5,7 @@ using System.Linq;
 using System.Web;
 using CareTrackerV1.Enums;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Web.Mvc;
 
 namespace CareTrackerV1.Models
 {
@@ -79,6 +80,27 @@ namespace CareTrackerV1.Models
         //One CarGiver has one User ID
         [ForeignKey("UserID")]
         public virtual ApplicationUser User { get; set; }
+
+        public IEnumerable<SelectListItem> AllClients { get; set; }
+
+        private List<int> _selectedClients;
+        public List<int> SelectedClients
+        {
+            get
+            {
+                if (_selectedClients == null)
+                {
+                    _selectedClients = Clients.Select(c => c.ID).ToList();
+                }
+                return _selectedClients;
+            }
+            set
+            {
+                _selectedClients = value;
+            }
+        }
+        public virtual ICollection<File> Files { get; set; }
     }
 }
+
 

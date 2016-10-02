@@ -97,7 +97,7 @@ namespace CareTrackerV1.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            CareGiver careGiver = db.CareGivers.Find(id);
+            CareGiver careGiver = db.CareGivers.Include(c => c.Files).SingleOrDefault(c => c.ID == id);
             if (careGiver == null)
             {
                 return HttpNotFound();
@@ -116,10 +116,24 @@ namespace CareTrackerV1.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "ID,FirstName,Surname,AddressLine1,AddressLine2,Region,Email,PhoneNumber,Mobile,Qualifications,CV,References")] CareGiver careGiver)
+        public ActionResult Create([Bind(Include = "ID,FirstName,Surname,AddressLine1,AddressLine2,Region,Email,PhoneNumber,Mobile,Qualifications,CV,References")] CareGiver careGiver, HttpPostedFileBase upload)
         {
             if (ModelState.IsValid)
             {
+                if (upload != null && upload.ContentLength > 0)
+                {
+                    var photoID = new File
+                    {
+                        FileName = System.IO.Path.GetFileName(upload.FileName),
+                        FileType = FileType.PhotoID,
+                        ContentType = upload.ContentType
+                    };
+                    using (var reader = new System.IO.BinaryReader(upload.InputStream))
+                    {
+                        photoID.Content = reader.ReadBytes(upload.ContentLength);
+                    }
+                    careGiver.Files = new List<File> { photoID };
+                }
                 db.CareGivers.Add(careGiver);
                 db.SaveChanges();
                 return RedirectToAction("Index");
@@ -135,12 +149,36 @@ namespace CareTrackerV1.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            CareGiver careGiver = db.CareGivers.Find(id);
+            CareGiver careGiver = db.CareGivers.Include(c => c.Files).SingleOrDefault(c => c.ID == id);
             if (careGiver == null)
             {
                 return HttpNotFound();
             }
+
+            var allClientsList = db.Clients.ToList();
+            careGiver.AllClients = allClientsList.Select(o => new SelectListItem
+            {
+                Text = o.FirstName + " " + o.Surname,
+                Value = o.ID.ToString()
+            });
+            PopulateCareGiverClientData(careGiver);
             return View(careGiver);
+        }
+
+        private void PopulateCareGiverClientData(CareGiver careGiver)
+        {
+            var allClients = db.Clients;
+            var clients = new HashSet<int>(careGiver.Clients.Select(c => c.ID));
+            var viewModel = new List<CareGiverClientData>();
+            foreach (var client in allClients)
+            {
+                viewModel.Add(new CareGiverClientData
+                {
+                    ClientID = client.ID,
+                    Selected = clients.Contains(client.ID)
+                });
+            }
+            ViewBag.Clients = viewModel;
         }
 
         // POST: CareGiver/Edit/5
@@ -148,15 +186,91 @@ namespace CareTrackerV1.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "ID,FirstName,Surname,AddressLine1,AddressLine2,Region,Email,PhoneNumber,Mobile,Qualifications,CV,References")] CareGiver careGiver)
+        public ActionResult Edit(int id, FormCollection formCollection, string[] selectedClients, HttpPostedFileBase upload)
         {
-            if (ModelState.IsValid)
+
+            var careGiverToUpdate = db.CareGivers
+                .Include(i => i.Clients)
+                .Where(i => i.ID == id)
+                .Single();
+
+            if (TryUpdateModel(careGiverToUpdate, "",
+      new string[] { "FirstName", "Surname", "AddressLine1", "AddressLine2", "Region", "Email", "PhoneNumber", "Mobile", "Qualifications", "CV", "References", "UserID" }))
             {
-                db.Entry(careGiver).State = EntityState.Modified;
-                db.SaveChanges();
-                return RedirectToAction("Index");
+                /*try
+                {
+                    UpdateCareGiver(selectedClients, careGiverToUpdate);
+
+                    db.Entry(careGiverToUpdate).State = EntityState.Modified;
+                    db.SaveChanges();
+
+                    return RedirectToAction("Index");
+                }*/
+                try
+                {
+                    if (upload != null && upload.ContentLength > 0)
+                    {
+                        if (careGiverToUpdate.Files.Any(f => f.FileType == FileType.PhotoID))
+                        {
+                            db.Files.Remove(careGiverToUpdate.Files.First(f => f.FileType == FileType.PhotoID));
+                        }
+                        var photoID = new File
+                        {
+                            FileName = System.IO.Path.GetFileName(upload.FileName),
+                            FileType = FileType.PhotoID,
+                            ContentType = upload.ContentType
+                        };
+                        using (var reader = new System.IO.BinaryReader(upload.InputStream))
+                        {
+                            photoID.Content = reader.ReadBytes(upload.ContentLength);
+                        }
+                        careGiverToUpdate.Files = new List<File> { photoID };
+                    }
+
+                    UpdateCareGiver(selectedClients, careGiverToUpdate);
+
+                    db.Entry(careGiverToUpdate).State = EntityState.Modified;
+                    db.SaveChanges();
+
+                    return RedirectToAction("Index");
+                }
+                catch (DataException /* dex */)
+                {
+                    //Log the error (uncomment dex variable name after DataException and add a line here to write a log.
+                    ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists see your system administrator.");
+                }
             }
-            return View(careGiver);
+            PopulateCareGiverClientData(careGiverToUpdate);
+            return View(careGiverToUpdate);
+        }
+
+        private void UpdateCareGiver(string[] selectedClients, CareGiver careGiverToUpdate)
+        {
+            if (selectedClients == null)
+            {
+                careGiverToUpdate.Clients = new List<Client>();
+                return;
+            }
+
+            var selectedClientsHS = new HashSet<string>(selectedClients);
+            var careGiverClients = new HashSet<int>(careGiverToUpdate.Clients.Select(t => t.ID));
+            foreach (var client in db.Clients)
+            {
+                if (selectedClientsHS.Contains(client.ID.ToString()))
+                {
+                    if (!careGiverClients.Contains(client.ID))
+                    {
+                        careGiverToUpdate.Clients.Add(client);
+                    }
+                }
+                else
+                {
+                    if (careGiverClients.Contains(client.ID))
+                    {
+                        careGiverToUpdate.Clients.Remove(client);
+                    }
+                }
+            }
         }
 
         // GET: CareGiver/Delete/5
