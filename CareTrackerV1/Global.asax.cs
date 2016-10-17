@@ -19,5 +19,14 @@ namespace CareTrackerV1
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
         }
+        protected void Application_BeginRequest()
+        {
+            Response.Cache.SetCacheability(HttpCacheability.NoCache);
+            Response.Cache.SetExpires(DateTime.UtcNow.AddSeconds(-1));
+            Response.Cache.SetNoStore();
+            Response.Cache.AppendCacheExtension("no-cache");
+            Response.Expires = 0;
+
+        }
     }
 }

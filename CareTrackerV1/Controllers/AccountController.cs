@@ -420,6 +420,13 @@ namespace CareTrackerV1.Controllers
         public ActionResult LogOff()
         {
             AuthenticationManager.SignOut(DefaultAuthenticationTypes.ApplicationCookie);
+
+            Response.Cache.SetCacheability(HttpCacheability.NoCache);
+            Response.Cache.SetExpires(DateTime.UtcNow.AddSeconds(-1));
+            Response.Cache.SetNoStore();
+            Response.Cache.AppendCacheExtension("no-cache");
+            Response.Expires = 0;     //Need this with similar code in Global.asax.cs
+
             return RedirectToAction("Index", "Home");
         }
 
